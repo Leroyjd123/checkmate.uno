@@ -26,7 +26,7 @@ export class GamesService {
   }
 
   /**
-   * Generate random 8 power cards and assign 3 to each player, discard 2
+   * Generate random 8 power cards and distribute equally (4 to each player)
    */
   private generateAndAssignCards(): {
     hostCards: string[];
@@ -50,8 +50,8 @@ export class GamesService {
     }
 
     return {
-      hostCards: allCards.slice(0, 3),
-      guestCards: allCards.slice(3, 6),
+      hostCards: allCards.slice(0, 4),
+      guestCards: allCards.slice(4, 8),
     };
   }
 
