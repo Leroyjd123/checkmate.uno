@@ -1,14 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd \"/mnt/c/Users/LeroyJoiceDsouza/Desktop/Code Projects/checkmate.uno/frontend\" && npm run dev -- --port 3001 2>&1 | head -50)",
-      "Read(//mnt/c/Users/LeroyJoiceDsouza/Desktop/Code Projects/checkmate.uno/**)",
-      "Bash(npx storybook@latest init)",
-      "Bash(backend\")",
-      "Bash(grep -E \"md$|^backend\")",
-      "Bash(git commit -m ' *)",
+      "Bash(git merge *)",
+      "Bash(git commit -m 'merge: phase-2-local-gameplay - frontend gameplay and documentation organization *)",
+      "Bash(git commit -m 'merge: phase-2-local-gameplay - frontend gameplay and documentation *)",
+      "Bash(git clean *)",
+      "Bash(git commit -m 'merge: phase-2-local-gameplay + phase-3-postgres-refactor into master *)",
+      "Bash(git push *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git branch *)"
     ]
   }
 }

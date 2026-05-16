@@ -1,21 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PostgresService } from '../database/postgres.service';
 import { ChessService } from '../chess/chess.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { GameMode } from '../common/types';
-import { CardType } from '../generated/prisma/enums';
 
 @Injectable()
 export class GamesService {
   constructor(
-    private postgres: PostgresService,
+    private db: PostgresService,
     private chessService: ChessService,
   ) {}
 
-  /**
-   * Generate a random 6-character room code
-   * Excludes ambiguous characters: 0, O, 1, I
-   */
   private generateRoomCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
@@ -25,9 +21,6 @@ export class GamesService {
     return code;
   }
 
-  /**
-   * Generate random 8 power cards and distribute equally (4 to each player)
-   */
   private generateAndAssignCards(): {
     hostCards: string[];
     guestCards: string[];
@@ -43,7 +36,6 @@ export class GamesService {
       'freeze',
     ];
 
-    // Shuffle array
     for (let i = allCards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [allCards[i], allCards[j]] = [allCards[j], allCards[i]];
@@ -58,279 +50,301 @@ export class GamesService {
   async createGame(createGameDto: CreateGameDto, userId?: string) {
     const { mode } = createGameDto;
     const cards = this.generateAndAssignCards();
+    const initialFen =
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
-    const gameData: any = {
-      mode,
-      boardState: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-      currentTurn: 'white',
-    };
+    return this.db.transaction(async (client) => {
+      const gameId = randomUUID();
+      const roomCode = mode === 'online' ? this.generateRoomCode() : null;
+      const status = mode === 'online' ? 'waiting' : 'in_progress';
 
-    // For online games, generate room code and set host
-    if (mode === 'online') {
-      gameData.roomCode = this.generateRoomCode();
-      gameData.status = 'waiting';
-      if (userId) {
-        gameData.hostId = userId;
-      }
-    } else {
-      gameData.status = 'in_progress';
-    }
+      await client.query(
+        `INSERT INTO games (id, mode, board_state, current_turn, status, room_code, host_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [gameId, mode, initialFen, 'white', status, roomCode, userId || null],
+      );
 
-    const game = await this.prisma.game.create({
-      data: gameData,
+      const cardValues: any[] = [];
+      let paramCount = 1;
+      let sql =
+        'INSERT INTO game_cards (id, game_id, player_id, card_type) VALUES ';
+      const valueSets: string[] = [];
+
+      [...cards.hostCards, ...cards.guestCards].forEach((cardType, idx) => {
+        const playerId = idx < cards.hostCards.length ? userId : null;
+        const cardId = randomUUID();
+        valueSets.push(
+          `($${paramCount++}, $${paramCount++}, $${paramCount++}, $${paramCount++})`,
+        );
+        cardValues.push(cardId, gameId, playerId, cardType);
+      });
+
+      sql += valueSets.join(', ');
+      await client.query(sql, cardValues);
+
+      const game = {
+        id: gameId,
+        mode,
+        board_state: initialFen,
+        current_turn: 'white',
+        status,
+        room_code: roomCode,
+      };
+
+      const cardsResult = await client.query(
+        `SELECT id, card_type FROM game_cards WHERE game_id = $1 AND player_id = $2`,
+        [game.id, userId || null],
+      );
+
+      return {
+        game: {
+          id: game.id,
+          mode: game.mode,
+          room_code: game.room_code,
+          status: game.status,
+          board_state: game.board_state,
+          current_turn: game.current_turn,
+        },
+        cards: cardsResult.rows.map((c: any) => ({
+          id: c.id,
+          type: c.card_type,
+        })),
+      };
     });
-
-    // Create game cards
-    const cardsData = [
-      ...cards.hostCards.map((type) => ({
-        gameId: game.id,
-        playerId: mode === 'online' ? userId : null,
-        cardType: type as CardType,
-      })),
-      ...cards.guestCards.map((type) => ({
-        gameId: game.id,
-        playerId: null, // Will be assigned when guest joins
-        cardType: type as CardType,
-      })),
-    ];
-
-    await this.prisma.gameCard.createMany({
-      data: cardsData,
-    });
-
-    // Fetch created cards
-    const gameCards = await this.prisma.gameCard.findMany({
-      where: { gameId: game.id, playerId: userId || null },
-    });
-
-    return {
-      game: {
-        id: game.id,
-        mode: game.mode,
-        room_code: game.roomCode,
-        status: game.status,
-        board_state: game.boardState,
-        current_turn: game.currentTurn,
-      },
-      cards: gameCards.map((c) => ({
-        id: c.id,
-        type: c.cardType,
-      })),
-    };
   }
 
   async getGame(gameId: string, userId?: string) {
-    const game = await this.prisma.game.findUnique({
-      where: { id: gameId },
-    });
+    const gameResult = await this.db.queryOne(
+      `SELECT * FROM games WHERE id = $1`,
+      [gameId],
+    );
 
-    if (!game) {
+    if (!gameResult) {
       return null;
     }
 
-    // For online mode, verify user is participant
-    if (game.mode === 'online' && userId) {
-      if (game.hostId !== userId && game.guestId !== userId) {
-        return null;
-      }
+    if (
+      gameResult.mode === 'online' &&
+      userId &&
+      gameResult.host_id !== userId &&
+      gameResult.guest_id !== userId
+    ) {
+      return null;
     }
 
-    // Get user's cards
-    const userCards = await this.prisma.gameCard.findMany({
-      where: { gameId, playerId: userId },
-    });
+    const userCardsResult = await this.db.query(
+      `SELECT id, card_type FROM game_cards WHERE game_id = $1 AND player_id = $2`,
+      [gameId, userId],
+    );
 
-    // Get opponent card count
-    const opponentId = game.hostId === userId ? game.guestId : game.hostId;
-    const opponentCardCount = opponentId
-      ? await this.prisma.gameCard.count({
-          where: { gameId, playerId: opponentId, status: 'available' },
-        })
-      : 0;
+    const opponentId =
+      gameResult.host_id === userId ? gameResult.guest_id : gameResult.host_id;
+
+    let opponentCardCount = 0;
+    if (opponentId) {
+      const countResult = await this.db.queryOne(
+        `SELECT COUNT(*) as count FROM game_cards WHERE game_id = $1 AND player_id = $2 AND status = 'available'`,
+        [gameId, opponentId],
+      );
+      opponentCardCount = parseInt(countResult.count, 10);
+    }
 
     return {
-      id: game.id,
-      mode: game.mode,
-      status: game.status,
-      current_turn: game.currentTurn,
-      board_state: game.boardState,
-      active_effects: game.activeEffects,
-      your_cards: userCards,
+      id: gameResult.id,
+      mode: gameResult.mode,
+      status: gameResult.status,
+      current_turn: gameResult.current_turn,
+      board_state: gameResult.board_state,
+      active_effects: gameResult.active_effects,
+      your_cards: userCardsResult.rows.map((c: any) => ({
+        id: c.id,
+        type: c.card_type,
+      })),
       opponent_card_count: opponentCardCount,
     };
   }
 
   async joinRoom(roomCode: string, userId: string) {
-    const game = await this.prisma.game.findUnique({
-      where: { roomCode },
-      include: { host: true, guest: true, cards: true },
-    });
+    const gameResult = await this.db.queryOne(
+      `SELECT * FROM games WHERE room_code = $1`,
+      [roomCode],
+    );
 
-    if (!game) {
+    if (!gameResult) {
       throw new Error('Game not found');
     }
 
-    if (game.mode !== 'online') {
+    if (gameResult.mode !== 'online') {
       throw new Error('Cannot join non-online game');
     }
 
-    if (game.status !== 'waiting') {
+    if (gameResult.status !== 'waiting') {
       throw new Error('Game already started or completed');
     }
 
-    if (game.guestId) {
+    if (gameResult.guest_id) {
       throw new Error('Game already has a guest');
     }
 
-    // Assign guest and start game
-    await this.prisma.game.update({
-      where: { id: game.id },
-      data: { guestId: userId, status: 'in_progress' },
-    });
+    return this.db.transaction(async (client) => {
+      await client.query(
+        `UPDATE games SET guest_id = $1, status = 'in_progress' WHERE id = $2`,
+        [userId, gameResult.id],
+      );
 
-    // Assign guest cards
-    const guestCards = game.cards.filter((c) => !c.playerId);
-    await this.prisma.gameCard.updateMany({
-      where: { id: { in: guestCards.map((c) => c.id) } },
-      data: { playerId: userId },
-    });
+      const cardsResult = await client.query(
+        `SELECT id FROM game_cards WHERE game_id = $1 AND player_id IS NULL`,
+        [gameResult.id],
+      );
 
-    return this.getGame(game.id, userId);
+      const cardIds = cardsResult.rows.map((c: any) => c.id);
+      if (cardIds.length > 0) {
+        const placeholders = cardIds.map((_, i) => `$${i + 1}`).join(',');
+        await client.query(
+          `UPDATE game_cards SET player_id = $${cardIds.length + 1} WHERE id IN (${placeholders})`,
+          [...cardIds, userId],
+        );
+      }
+
+      return this.getGame(gameResult.id, userId);
+    });
   }
 
   async executeMove(gameId: string, userId: string, from: string, to: string) {
-    const game = await this.prisma.game.findUnique({
-      where: { id: gameId },
-      include: { host: true, guest: true },
-    });
+    const gameResult = await this.db.queryOne(
+      `SELECT * FROM games WHERE id = $1`,
+      [gameId],
+    );
 
-    if (!game) {
+    if (!gameResult) {
       throw new Error('Game not found');
     }
 
-    // Verify user is a participant
-    if (game.hostId !== userId && game.guestId !== userId) {
+    if (gameResult.host_id !== userId && gameResult.guest_id !== userId) {
       throw new Error('Not a participant in this game');
     }
 
-    // Verify it's the user's turn
-    const isWhiteTurn = game.currentTurn === 'white';
-    const userIsHost = game.hostId === userId;
-    const isUserTurn = (isWhiteTurn && userIsHost) || (!isWhiteTurn && !userIsHost);
+    const isWhiteTurn = gameResult.current_turn === 'white';
+    const userIsHost = gameResult.host_id === userId;
+    const isUserTurn =
+      (isWhiteTurn && userIsHost) || (!isWhiteTurn && !userIsHost);
 
     if (!isUserTurn) {
       throw new Error('Not your turn');
     }
 
-    if (game.status !== 'in_progress') {
+    if (gameResult.status !== 'in_progress') {
       throw new Error('Game is not in progress');
     }
 
-    // Validate move with chess.js
-    const chess = this.chessService.createFromFen(game.boardState);
+    const chess = this.chessService.createFromFen(gameResult.board_state);
 
     if (!this.chessService.isMoveLegal(chess, from, to)) {
       throw new Error('Illegal move');
     }
 
-    // Check for active skip_turn effect on current player
-    const activeEffects = game.activeEffects as any[];
-    const skipTurnEffect = activeEffects?.find((e) => e.type === 'skip_turn' && e.appliedBy !== userId);
+    const activeEffects = gameResult.active_effects || [];
+    const skipTurnEffect = activeEffects.find(
+      (e: any) =>
+        e.type === 'skip_turn' &&
+        e.appliedBy !== userId &&
+        e.turnsRemaining > 0,
+    );
 
-    if (skipTurnEffect && skipTurnEffect.turnsRemaining > 0) {
-      // Remove skip effect and switch turn without executing move
+    if (skipTurnEffect) {
       const updatedEffects = activeEffects
-        .filter((e) => e.type !== 'skip_turn' || e.appliedBy === userId)
-        .map((e) => e.type === 'skip_turn' ? { ...e, turnsRemaining: 0 } : e)
-        .filter((e) => e.turnsRemaining > 0);
+        .filter((e: any) => !(e.type === 'skip_turn' && e.appliedBy !== userId))
+        .map((e: any) =>
+          e.type === 'skip_turn' ? { ...e, turnsRemaining: 0 } : e,
+        )
+        .filter((e: any) => e.turnsRemaining > 0);
 
-      await this.prisma.game.update({
-        where: { id: gameId },
-        data: {
-          currentTurn: isWhiteTurn ? 'black' : 'white',
-          activeEffects: updatedEffects,
-        },
-      });
+      await this.db.query(
+        `UPDATE games SET current_turn = $1, active_effects = $2 WHERE id = $3`,
+        [
+          isWhiteTurn ? 'black' : 'white',
+          JSON.stringify(updatedEffects),
+          gameId,
+        ],
+      );
 
       return this.getGame(gameId, userId);
     }
 
-    // Execute move
     const newFen = this.chessService.executeMove(chess, from, to);
     if (!newFen) {
       throw new Error('Failed to execute move');
     }
 
     const updatedChess = this.chessService.createFromFen(newFen);
-    const newTurn = this.chessService.getTurn(updatedChess) === 'w' ? 'white' : 'black';
+    const newTurn =
+      this.chessService.getTurn(updatedChess) === 'w' ? 'white' : 'black';
     const isCheckmate = this.chessService.isCheckmate(updatedChess);
 
-    // Decrement all active effects by 1 turn
     const updatedEffects = (activeEffects || [])
-      .map((e) => ({ ...e, turnsRemaining: Math.max(0, e.turnsRemaining - 1) }))
-      .filter((e) => e.turnsRemaining > 0);
+      .map((e: any) => ({
+        ...e,
+        turnsRemaining: Math.max(0, e.turnsRemaining - 1),
+      }))
+      .filter((e: any) => e.turnsRemaining > 0);
 
-    // Record move
-    await this.prisma.move.create({
-      data: {
-        gameId,
-        playerId: userId,
-        moveNotation: `${from}${to}`,
-      },
+    return this.db.transaction(async (client) => {
+      const moveId = randomUUID();
+      await client.query(
+        `INSERT INTO moves (id, game_id, player_id, move_notation) VALUES ($1, $2, $3, $4)`,
+        [moveId, gameId, userId, `${from}${to}`],
+      );
+
+      const gameStatus = isCheckmate ? 'completed' : 'in_progress';
+      const winnerId = isCheckmate ? userId : null;
+
+      await client.query(
+        `UPDATE games SET board_state = $1, current_turn = $2, status = $3, winner_id = $4, active_effects = $5 WHERE id = $6`,
+        [
+          newFen,
+          newTurn,
+          gameStatus,
+          winnerId,
+          JSON.stringify(updatedEffects),
+          gameId,
+        ],
+      );
+
+      return this.getGame(gameId, userId);
     });
-
-    // Update game state
-    const gameStatus = isCheckmate ? 'completed' : 'in_progress';
-    const winnerId = isCheckmate ? userId : null;
-
-    await this.prisma.game.update({
-      where: { id: gameId },
-      data: {
-        boardState: newFen,
-        currentTurn: newTurn,
-        status: gameStatus,
-        winnerId,
-        activeEffects: updatedEffects,
-      },
-    });
-
-    return this.getGame(gameId, userId);
   }
 
   async useCard(gameId: string, userId: string, cardId: string) {
-    const game = await this.prisma.game.findUnique({
-      where: { id: gameId },
-      include: { cards: true },
-    });
+    const gameResult = await this.db.queryOne(
+      `SELECT * FROM games WHERE id = $1`,
+      [gameId],
+    );
 
-    if (!game) {
+    if (!gameResult) {
       throw new Error('Game not found');
     }
 
-    const card = game.cards.find((c) => c.id === cardId);
-    if (!card) {
+    const cardResult = await this.db.queryOne(
+      `SELECT * FROM game_cards WHERE id = $1`,
+      [cardId],
+    );
+
+    if (!cardResult) {
       throw new Error('Card not found');
     }
 
-    if (card.playerId !== userId) {
+    if (cardResult.player_id !== userId) {
       throw new Error('Card does not belong to you');
     }
 
-    if (card.status !== 'available') {
+    if (cardResult.status !== 'available') {
       throw new Error('Card already used');
     }
 
-    // Mark card as used
-    await this.prisma.gameCard.update({
-      where: { id: cardId },
-      data: { status: 'used', usedAt: new Date() },
-    });
-
-    // Add effect based on card type
-    const activeEffects = (game.activeEffects as any[]) || [];
+    const activeEffects = gameResult.active_effects || [];
     let newEffect: any = null;
 
-    switch (card.cardType) {
+    switch (cardResult.card_type) {
       case 'skip_turn':
         newEffect = {
           type: 'skip_turn',
@@ -363,19 +377,24 @@ export class GamesService {
           appliedBy: userId,
         };
         break;
-      // Handle other cards as needed
     }
 
-    if (newEffect) {
-      activeEffects.push(newEffect);
-    }
+    return this.db.transaction(async (client) => {
+      await client.query(
+        `UPDATE game_cards SET status = 'used', used_at = NOW() WHERE id = $1`,
+        [cardId],
+      );
 
-    // Update game with new effects
-    await this.prisma.game.update({
-      where: { id: gameId },
-      data: { activeEffects },
+      if (newEffect) {
+        activeEffects.push(newEffect);
+      }
+
+      await client.query(`UPDATE games SET active_effects = $1 WHERE id = $2`, [
+        JSON.stringify(activeEffects),
+        gameId,
+      ]);
+
+      return this.getGame(gameId, userId);
     });
-
-    return this.getGame(gameId, userId);
   }
 }

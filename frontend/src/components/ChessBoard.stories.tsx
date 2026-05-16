@@ -71,6 +71,16 @@ export const EndGame: Story = {
 };
 
 export const Interactive: Story = {
+  args: {
+    fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2',
+    currentTurn: 'white',
+    moves: [
+      { from: 'e2', to: 'e4', piece: 'P' },
+      { from: 'e7', to: 'e5', piece: 'p' },
+    ],
+    capturedPieces: { white: [], black: [] },
+    legalMoves: ['a3', 'a4', 'Nf3', 'Nc3'],
+  },
   render: () => {
     const [selected, setSelected] = React.useState<string | null>(null);
     const [moves, setMoves] = React.useState<Array<{ from: string; to: string; piece: string }>>([

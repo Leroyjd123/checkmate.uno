@@ -34,6 +34,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     ws.on('connect', handleConnect);
     ws.on('disconnect', handleDisconnect);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(ws);
 
     // Cleanup on unmount

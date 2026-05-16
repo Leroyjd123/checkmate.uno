@@ -17,6 +17,7 @@ async function apiRequest<T>(
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...options.headers,
       },
     });

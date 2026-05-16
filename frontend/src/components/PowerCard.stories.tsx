@@ -14,10 +14,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const createCard = (type: PowerCardType['type']): PowerCardType => ({
+const createCard = (type: PowerCardType['card_type']): PowerCardType => ({
   id: '1',
-  type,
-  usedAt: null,
+  game_id: 'game-1',
+  player_id: 'player-1',
+  card_type: type,
+  status: 'available',
 });
 
 export const SkipTurn: Story = {
@@ -76,6 +78,7 @@ export const Disabled: Story = {
 };
 
 export const AllCards: Story = {
+  args: { card: createCard('skip_turn') },
   render: () => (
     <div className="flex gap-4 flex-wrap justify-center p-8">
       <PowerCard card={createCard('skip_turn')} />

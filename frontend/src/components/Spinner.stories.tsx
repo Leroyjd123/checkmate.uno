@@ -41,6 +41,7 @@ export const Yellow: Story = {
 };
 
 export const AllSizes: Story = {
+  args: { size: 'md' },
   render: () => (
     <div className="flex gap-8">
       <div className="flex flex-col items-center gap-2">

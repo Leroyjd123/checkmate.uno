@@ -14,6 +14,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: { isOpen: true, onClose: () => {}, title: "Confirm Action", children: '' },
   render: () => {
     const [isOpen, setIsOpen] = useState(true);
     return (
@@ -47,6 +48,7 @@ export const Default: Story = {
 };
 
 export const WithoutTitle: Story = {
+  args: { isOpen: true, onClose: () => {}, children: '' },
   render: () => {
     const [isOpen, setIsOpen] = useState(true);
     return (
