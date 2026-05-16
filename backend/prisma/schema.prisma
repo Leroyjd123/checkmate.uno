@@ -1,0 +1,143 @@
+// Checkmate.Uno Prisma Schema
+// Database: PostgreSQL (Supabase)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Users table (handled by Supabase Auth, but we may store additional preferences)
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  themePreference   String   @default("light")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  hostedGames       Game[]   @relation("hostId")
+  guestGames        Game[]   @relation("guestId")
+  wonGames          Game[]   @relation("winnerId")
+  gameCards         GameCard[]
+  moves             Move[]
+
+  @@map("users")
+}
+
+// Games table: stores game state, board position, and metadata
+model Game {
+  id              String   @id @default(uuid())
+  mode            GameMode @default(online)
+  roomCode        String?  @unique
+  status          GameStatus @default(waiting)
+
+  hostId          String?
+  host            User?    @relation("hostId", fields: [hostId], references: [id])
+
+  guestId         String?
+  guest           User?    @relation("guestId", fields: [guestId], references: [id])
+
+  currentTurn     TurnColor @default(white)
+  boardState      String   // FEN notation
+  activeEffects   Json     @default("[]") // Array of {type, pieceSquare, turnsRemaining, appliedBy}
+
+  winnerId        String?
+  winner          User?    @relation("winnerId", fields: [winnerId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  cards           GameCard[]
+  moves           Move[]
+
+  @@index([roomCode])
+  @@index([status])
+  @@index([hostId])
+  @@index([guestId])
+  @@map("games")
+}
+
+// Game Cards: represents power cards in a game
+model GameCard {
+  id        String   @id @default(uuid())
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  playerId  String?  // null for computer or unassigned guest cards
+  player    User?    @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  cardType  CardType
+  status    CardStatus @default(available)
+  usedAt    DateTime?
+
+  @@index([gameId])
+  @@index([playerId])
+  @@unique([gameId, playerId, id])
+  @@map("game_cards")
+}
+
+// Moves table: for analytics only, not used during gameplay
+model Move {
+  id            String   @id @default(uuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  playerId      String?
+  player        User?    @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  moveNotation  String   // e.g., "e2e4"
+  cardUsed      String?  // e.g., "shield"
+  timestamp     DateTime @default(now())
+
+  @@index([gameId])
+  @@index([playerId])
+  @@map("moves")
+}
+
+// Enums
+enum GameMode {
+  local
+  computer
+  online
+
+  @@map("game_mode")
+}
+
+enum GameStatus {
+  waiting
+  in_progress
+  completed
+  forfeited
+
+  @@map("game_status")
+}
+
+enum TurnColor {
+  white
+  black
+
+  @@map("turn_color")
+}
+
+enum CardType {
+  skip_turn
+  reverse_move
+  extra_move
+  teleport
+  shield
+  sacrifice
+  wild_swap
+  freeze
+
+  @@map("card_type")
+}
+
+enum CardStatus {
+  available
+  used
+
+  @@map("card_status")
+}
