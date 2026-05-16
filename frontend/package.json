@@ -15,8 +15,8 @@
   "dependencies": {
     "chess.js": "^1.4.0",
     "next": "16.2.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
@@ -29,11 +29,11 @@
     "@storybook/nextjs-vite": "^10.4.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^14.3.1",
+    "@testing-library/react": "^15.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "@vitest/browser-playwright": "^4.1.6",
     "@vitest/coverage-v8": "^4.1.6",
     "eslint": "^9",
