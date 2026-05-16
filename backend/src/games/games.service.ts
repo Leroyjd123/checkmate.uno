@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
+import { PostgresService } from '../database/postgres.service';
 import { ChessService } from '../chess/chess.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { GameMode } from '../common/types';
@@ -8,7 +8,7 @@ import { CardType } from '../generated/prisma/enums';
 @Injectable()
 export class GamesService {
   constructor(
-    private prisma: PrismaService,
+    private postgres: PostgresService,
     private chessService: ChessService,
   ) {}
 

@@ -1,0 +1,171 @@
+# Welcome to Checkmate Storybook
+
+This is the complete component library and design system documentation for **Checkmate** — Chess with power cards.
+
+## What is Storybook?
+
+Storybook is a tool for developing UI components in isolation. It allows you to:
+
+- **View components** in different states
+- **Test interactions** in real-time
+- **Review visual design** consistency
+- **Access documentation** for developers
+
+## Quick Navigation
+
+### 📚 Design System
+- **Colors & Tokens** - Complete color palette and design tokens
+- **Typography** - Font scales and weights
+- **Borders & Spacing** - Border radius and spacing rules
+
+### 🎮 Game Components
+- **Power Cards** - All 8 power card types with effects
+- **Chess Board** - Interactive chess board with FEN support
+
+### 🎨 Core UI Components
+- **Button** - Primary actions and CTAs
+- **Card** - Content containers
+- **Input** - Form fields
+- **Modal** - Dialogs and overlays
+- **Badge** - Status indicators and labels
+- **Alert** - Notifications and messages
+- **Spinner** - Loading states
+- **Tabs** - Tabbed interfaces
+
+## Design Tokens
+
+### Colors (Chess + UNO Theme)
+
+```
+Background:    Slate 950 (#0f172a)
+Primary:       Green 500 (#22c55e) - Local & Primary CTA
+Secondary:     Blue 500 (#3b82f6) - Online & Info
+Accent:        Red 500 (#ef4444) - vs Computer & Danger
+Warning:       Yellow 500 (#eab308) - Alerts
+Text:          White (#ffffff) - Primary text
+```
+
+### Game Modes
+
+| Mode | Color | Use Case |
+|------|-------|----------|
+| Local | Green | Same-device play with friends |
+| vs Computer | Red | Challenge AI opponent |
+| Online | Blue | Multiplayer worldwide |
+
+## Component States
+
+All components support multiple states:
+- **Default** - Normal state
+- **Hover** - Interactive feedback
+- **Focus** - Keyboard navigation
+- **Disabled** - Non-interactive
+- **Loading** - Processing
+- **Error** - Invalid/error state
+
+## Dark Theme
+
+All components are optimized for **dark theme** (Slate 950 background).
+
+Use the **Background** toggle in the toolbar to test light backgrounds if needed.
+
+## Getting Started with Development
+
+### Create a New Component
+
+1. Create `MyComponent.tsx` in `src/components/`
+2. Create `MyComponent.stories.tsx` with story examples
+3. Run `npm run storybook` to view
+4. Test variants and states
+
+### Example Component
+
+```tsx
+// src/components/MyComponent.tsx
+interface MyComponentProps {
+  variant?: 'primary' | 'secondary';
+  children: React.ReactNode;
+}
+
+export function MyComponent({ variant = 'primary', children }: MyComponentProps) {
+  return <div className={`my-component my-component--${variant}`}>{children}</div>;
+}
+```
+
+```tsx
+// src/components/MyComponent.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react';
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  title: 'Components/MyComponent',
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Primary: Story = {
+  args: { variant: 'primary', children: 'Hello' },
+};
+
+export const Secondary: Story = {
+  args: { variant: 'secondary', children: 'Hello' },
+};
+```
+
+## Component Best Practices
+
+✅ **DO**
+- Keep components focused and single-responsibility
+- Use TypeScript for type safety
+- Document all variants in stories
+- Test accessibility
+- Use semantic HTML
+
+❌ **DON'T**
+- Mix unrelated logic in one component
+- Forget to add stories
+- Use inline styles (use Tailwind)
+- Ignore dark mode compatibility
+- Add too many props
+
+## Resources
+
+- 📖 [Full Storybook Docs](./STORYBOOK.md)
+- 🎨 [Component Library](src/components/)
+- 🕹️ [Game Rules](./src/app/how-to-play/)
+- 💻 [Frontend Setup](./README.md)
+
+## Testing Components
+
+All components have corresponding `.stories.tsx` files with examples.
+
+Click on a story to:
+- View the component
+- Interact with it
+- Modify props with controls
+- Copy the component code
+
+## Colors Reference
+
+### Primary Colors
+
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+  <div style={{ backgroundColor: '#22c55e', padding: '1rem', borderRadius: '0.5rem', color: '#0f172a', fontWeight: 'bold' }}>Green 500</div>
+  <div style={{ backgroundColor: '#3b82f6', padding: '1rem', borderRadius: '0.5rem', color: 'white', fontWeight: 'bold' }}>Blue 500</div>
+  <div style={{ backgroundColor: '#ef4444', padding: '1rem', borderRadius: '0.5rem', color: 'white', fontWeight: 'bold' }}>Red 500</div>
+  <div style={{ backgroundColor: '#eab308', padding: '1rem', borderRadius: '0.5rem', color: '#0f172a', fontWeight: 'bold' }}>Yellow 500</div>
+</div>
+
+## Questions?
+
+- Check the [Storybook documentation](./STORYBOOK.md)
+- Review component stories for usage examples
+- Check the source code in `src/components/`
+
+---
+
+**Last updated:** May 2026
+**Storybook Version:** 8.0+
+**Next.js Version:** 16.x

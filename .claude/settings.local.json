@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"/mnt/c/Users/LeroyJoiceDsouza/Desktop/Code Projects/checkmate.uno/frontend\" && npm run dev -- --port 3001 2>&1 | head -50)",
+      "Read(//mnt/c/Users/LeroyJoiceDsouza/Desktop/Code Projects/checkmate.uno/**)",
+      "Bash(npx storybook@latest init)",
+      "Bash(backend\")",
+      "Bash(grep -E \"md$|^backend\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ]
+  }
+}
