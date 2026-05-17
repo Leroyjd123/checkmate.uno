@@ -117,6 +117,8 @@ export interface GameStatistics {
   cardsUsed: number;
   startTime: number;
   endTime?: number;
+  moves: Move[];
+  capturedPieces: { white: string[]; black: string[] };
 }
 
 export interface GameHistory {

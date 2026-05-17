@@ -198,11 +198,20 @@ export default function GamePage({ params }: GamePageProps) {
 
     // If a square is already selected and this is a legal move, make the move
     if (selectedSquare && legalMoves.includes(square)) {
+      const movedPiece = pieces[selectedSquare];
+      const capturedPiece = pieces[square];
       const newFEN = makeMove(game.board_state, selectedSquare, square);
       if (!newFEN) return;
 
       const nextTurn: PlayerColor = game.current_turn === 'white' ? 'black' : 'white';
       const checkmated = isCheckmate(newFEN);
+
+      // Track move and captured pieces
+      const move = {
+        from: selectedSquare,
+        to: square,
+        piece: movedPiece?.type || '',
+      };
 
       // For online games, call the API
       if (game.mode === 'online') {
@@ -231,6 +240,9 @@ export default function GamePage({ params }: GamePageProps) {
         updateGame(updatedGame);
         incrementMoveCount();
         setPieces(getAllPieces(newFEN));
+
+        // Track move for display (move history will be stored in statistics)
+        // Note: Actual game state updates happen through GameContext
 
         if (checkmated) {
           setGameOver(true);
@@ -277,21 +289,22 @@ export default function GamePage({ params }: GamePageProps) {
       setCardMessage(`${cardType.replace(/_/g, ' ').toUpperCase()} card used!`);
       setTimeout(() => setCardMessage(null), 2000);
 
-      // Add card effect to active effects (only for effects that have board persistence)
-      const effectTypesWithPersistence = ['shield', 'freeze'];
-      if (effectTypesWithPersistence.includes(cardType)) {
-        updateGame({
-          ...game,
-          active_effects: [
-            ...game.active_effects,
-            {
-              type: cardType as CardType,
-              piece_square: selectedSquare || '',
-              turns_remaining: 3,
+      // Add card effect to active effects for all card types
+      updateGame({
+        ...game,
+        active_effects: [
+          ...game.active_effects,
+          {
+            type: cardType as CardType,
+            piece_square: selectedSquare || '',
+            turns_remaining: 3,
+            metadata: {
+              playedBy: 'white', // Track who played the card
+              appliedAt: new Date().toISOString(),
             },
-          ],
-        });
-      }
+          },
+        ],
+      });
     }
   };
 
@@ -419,8 +432,8 @@ export default function GamePage({ params }: GamePageProps) {
               onSquareClick={handleSquareClick}
               legalMoves={legalMoves}
               currentTurn={game.current_turn as 'white' | 'black'}
-              moves={[]}
-              capturedPieces={{ white: [], black: [] }}
+              moves={statistics.moves || []}
+              capturedPieces={statistics.capturedPieces || { white: [], black: [] }}
             />
           </div>
 

@@ -5,7 +5,7 @@ interface ChessBoardProps {
   onSquareClick?: (square: string) => void;
   selectedSquare?: string | null;
   legalMoves?: string[];
-  moves?: Array<{ from: string; to: string; piece: string }>;
+  moves?: Array<{ from: string; to: string; piece?: string }>;
   capturedPieces?: { white: string[]; black: string[] };
   currentTurn?: 'white' | 'black';
 }
@@ -103,7 +103,11 @@ export function ChessBoard({
                     `}
                     title={`${square}${piece ? ` - ${pieceNames[piece]}` : ''}`}
                   >
-                    {piece && pieces[piece]}
+                    {piece && (
+                      <span className={piece === piece.toUpperCase() ? 'text-white drop-shadow-lg' : 'text-slate-950 drop-shadow-lg'}>
+                        {pieces[piece]}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -175,7 +179,7 @@ export function ChessBoard({
                   className="text-sm text-slate-300 flex gap-2 pb-2 border-b border-slate-700 last:border-0"
                 >
                   <span className="text-slate-500 font-semibold">{idx + 1}.</span>
-                  <span>{pieces[move.piece]}</span>
+                  {move.piece && <span>{pieces[move.piece]}</span>}
                   <span className="text-slate-400">{move.from}</span>
                   <span className="text-slate-500">→</span>
                   <span className="text-green-400 font-semibold">{move.to}</span>

@@ -50,6 +50,8 @@ const initialState: GameState = {
     moveCount: 0,
     cardsUsed: 0,
     startTime: Date.now(),
+    moves: [],
+    capturedPieces: { white: [], black: [] },
   },
 };
 
@@ -169,6 +171,8 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           moveCount: 0,
           cardsUsed: 0,
           startTime: Date.now(),
+          moves: [],
+          capturedPieces: { white: [], black: [] },
         },
       };
 
