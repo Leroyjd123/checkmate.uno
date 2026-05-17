@@ -7,12 +7,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/contexts/WebSocketContext';
 import { useBoardTheme } from '@/contexts/BoardThemeContext';
 import { gamesAPI } from '@/lib/api';
-import { getAllPieces, getLegalMoves, makeMove, isCheckmate, getComputerMove, getAllSquares } from '@/lib/chess';
+import { getAllPieces, getLegalMoves, makeMove, isCheckmate, isInCheck, getComputerMove, getAllSquares } from '@/lib/chess';
 import { GameOver } from '@/components/GameOver';
 import { ChessBoard } from '@/components/ChessBoard';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { PlayerColor, Game, PowerCard, ActiveEffect, CardType } from '@/types/game';
 import { Logger } from '@/lib/logger';
+import { ComputerChat } from '@/components/ComputerChat';
+import { getComputerComment, MoveContext } from '@/lib/computer-chat';
 
 interface GamePageProps {
   params: Promise<{
@@ -57,6 +59,11 @@ export default function GamePage({ params }: GamePageProps) {
   const [allowExtraMove, setAllowExtraMove] = useState(false);
   const [activeAnimation, setActiveAnimation] = useState<CardType | null>(null);
   const [animatingSquares, setAnimatingSquares] = useState<string[]>([]);
+  const [chatMessages, setChatMessages] = useState<string[]>([]);
+
+  const addChatMessage = (msg: string) => {
+    setChatMessages(prev => [...prev, msg]);
+  };
 
   // Determine player color based on game mode and user role
   // For local games: Always allow both players to move (use turn checking)
@@ -190,6 +197,19 @@ export default function GamePage({ params }: GamePageProps) {
           incrementMoveCount();
           addMoveToHistory(computerFrom, computerTo);
           setPieces(getAllPieces(computerFEN));
+
+          // === COMPUTER CHAT: Opening greeting ===
+          setChatMessages([getComputerComment({
+            actor: 'computer',
+            moveCount: 1,
+            isCapture: false,
+            isCheck: false,
+            isCheckmate: false,
+            isPawnPromotion: false,
+            isCastling: false,
+            playerIsInCheck: false,
+            difficulty: game.difficulty,
+          })]);
 
           if (computerCheckmated) {
             Logger.gameCheckmate();
@@ -341,10 +361,43 @@ export default function GamePage({ params }: GamePageProps) {
         addMoveToHistory(selectedSquare, square);
         setPieces(getAllPieces(newFEN));
 
+        // === COMPUTER CHAT: Player move comment ===
+        if (game.mode === 'computer' && !checkmated) {
+          addChatMessage(getComputerComment({
+            actor: 'player',
+            moveCount: statistics.moveCount + 1,
+            isCapture: !!capturedPiece,
+            capturedPieceType: capturedPiece?.type,
+            movedPieceType: movedPiece?.type,
+            isCheck: isInCheck(newFEN),
+            isCheckmate: false,
+            isPawnPromotion: movedPiece?.type === 'P' && (square[1] === '8' || square[1] === '1'),
+            isCastling: movedPiece?.type === 'K' && Math.abs(selectedSquare.charCodeAt(0) - square.charCodeAt(0)) === 2,
+            playerIsInCheck: false,
+            difficulty: game.difficulty,
+          }));
+        }
+
         if (checkmated) {
           Logger.gameCheckmate();
           setGameOver(true);
           setWinner(game.current_turn);
+
+          // === COMPUTER CHAT: Player wins ===
+          if (game.mode === 'computer') {
+            addChatMessage(getComputerComment({
+              actor: 'player',
+              moveCount: statistics.moveCount + 1,
+              isCapture: !!capturedPiece,
+              isCheck: true,
+              isCheckmate: true,
+              isPawnPromotion: false,
+              isCastling: false,
+              playerIsInCheck: false,
+              winner: 'player',
+              difficulty: game.difficulty,
+            }));
+          }
         }
 
         // Computer move - only if computer's turn and game not over and skip_turn isn't active
@@ -384,10 +437,41 @@ export default function GamePage({ params }: GamePageProps) {
                 addMoveToHistory(computerFrom, computerTo);
                 setPieces(getAllPieces(computerFEN));
 
+                // === COMPUTER CHAT: Computer move comment ===
+                if (!computerCheckmated) {
+                  addChatMessage(getComputerComment({
+                    actor: 'computer',
+                    moveCount: statistics.moveCount + 2,
+                    isCapture: !!computerCapturedPiece,
+                    capturedPieceType: computerCapturedPiece?.type,
+                    movedPieceType: computerPieces[computerFrom]?.type,
+                    isCheck: false,
+                    isCheckmate: false,
+                    isPawnPromotion: computerPieces[computerFrom]?.type === 'P' && (computerTo[1] === '8' || computerTo[1] === '1'),
+                    isCastling: computerPieces[computerFrom]?.type === 'K' && Math.abs(computerFrom.charCodeAt(0) - computerTo.charCodeAt(0)) === 2,
+                    playerIsInCheck: isInCheck(computerFEN),
+                    difficulty: game.difficulty,
+                  }));
+                }
+
                 if (computerCheckmated) {
                   Logger.gameCheckmate();
                   setGameOver(true);
                   setWinner('black');
+
+                  // === COMPUTER CHAT: Computer wins ===
+                  addChatMessage(getComputerComment({
+                    actor: 'computer',
+                    moveCount: statistics.moveCount + 2,
+                    isCapture: !!computerCapturedPiece,
+                    isCheck: true,
+                    isCheckmate: true,
+                    isPawnPromotion: false,
+                    isCastling: false,
+                    playerIsInCheck: true,
+                    winner: 'computer',
+                    difficulty: game.difficulty,
+                  }));
                 }
               }
             } else if (skipComputerMove) {
@@ -772,6 +856,11 @@ export default function GamePage({ params }: GamePageProps) {
 
           {/* Right Sidebar - Power Cards & Player Info */}
           <div className="space-y-4 sm:space-y-6">
+            {/* Computer Chat - only for computer games */}
+            {game.mode === 'computer' && chatMessages.length > 0 && (
+              <ComputerChat messages={chatMessages} />
+            )}
+
             {/* Theme Selector */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-4">
               <ThemeSelector currentTheme={boardTheme} onThemeChange={setBoardTheme} />

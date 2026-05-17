@@ -150,7 +150,7 @@ export function ChessBoard({
           <div className="flex items-center gap-3">
             <div
               className={`w-4 h-4 rounded-full ${
-                currentTurn === 'white' ? 'bg-white' : `${themeConfig.dark.bg}`
+                currentTurn === 'white' ? 'bg-white' : 'bg-gray-400'
               }`}
             />
             <p className="text-base sm:text-lg font-semibold capitalize text-white">
