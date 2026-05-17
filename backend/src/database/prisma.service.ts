@@ -21,8 +21,8 @@ export class PrismaService {
     create: async (args: any) => {
       const { data } = args;
       const result = await this.pool.query(
-        'INSERT INTO users (id, email, "themePreference", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [data.id || require('crypto').randomUUID(), data.email, data.themePreference || 'light', new Date(), new Date()]
+        'INSERT INTO users (id, email, password, "themePreference", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [data.id || require('crypto').randomUUID(), data.email, data.password || '', data.themePreference || 'light', new Date(), new Date()]
       );
       return result.rows[0];
     },

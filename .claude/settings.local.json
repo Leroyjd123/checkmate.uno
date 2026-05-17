@@ -32,7 +32,16 @@
       "Bash(curl -s -X POST http://localhost:3001/api/games -H 'Content-Type: application/json' -d '{\"mode\":\"local\"}')",
       "Bash(cat > *)",
       "Bash(awk 'NR==412, NR==485 {print NR\": \"$0}' page.tsx)",
-      "Bash(awk 'NR>=334 && NR<=501' page.tsx)"
+      "Bash(awk 'NR>=334 && NR<=501' page.tsx)",
+      "Bash(npm start *)",
+      "PowerShell(cd \"c:\\\\Users\\\\LeroyJoiceDsouza\\\\Desktop\\\\Code Projects\\\\checkmate.uno\\\\frontend\"; $open = \\(Select-String -Path \"src/app/game/[gameId]/page.tsx\" -Pattern '\\\\{' -All | Measure-Object\\).Count; $close = \\(Select-String -Path \"src/app/game/[gameId]/page.tsx\" -Pattern '\\\\}' -All | Measure-Object\\).Count; \"Opening: $open, Closing: $close, Diff: $\\($open - $close\\)\")",
+      "PowerShell(cd \"c:\\\\Users\\\\LeroyJoiceDsouza\\\\Desktop\\\\Code Projects\\\\checkmate.uno\\\\frontend\"; Start-Process powershell -ArgumentList \"-NoProfile\", \"-Command\", \"cd '$PWD'; npm run dev\" -WindowStyle Hidden; Start-Sleep -Seconds 4; try { $resp = Invoke-WebRequest -Uri 'http://localhost:3000' -UseBasicParsing; $resp.Content.Substring\\(0, 500\\) } catch { \"Server not responding yet\" })",
+      "Bash(curl -X POST http://localhost:3001/api/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"TestPass123\"}' -v)",
+      "Bash(curl -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"TestPass123\"}')",
+      "Bash(cat)",
+      "Bash(chmod +x /tmp/test_auth_flow.sh)",
+      "Bash(bash /tmp/test_auth_flow.sh)",
+      "Bash(bash /tmp/verify_jwt.sh)"
     ],
     "additionalDirectories": [
       "\\tmp"

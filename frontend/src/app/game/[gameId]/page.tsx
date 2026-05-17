@@ -292,6 +292,7 @@ export default function GamePage({ params }: GamePageProps) {
           ],
         });
       }
+    }
   };
 
   const handleReplay = () => {
