@@ -1,14 +1,43 @@
-# Integration Checklist - Both Backend & Frontend
+# Integration Checklist - Phase 4 API Integration (May 17, 2026)
 
-**Current Status:**
-- ✅ Backend: Core logic complete, WebSocket ready, tests passing
-- ✅ Frontend: Next.js scaffolding, contexts, API client ready
-- ⏳ Database: Supabase pending setup
-- ⏳ Integration: Ready to test
+**Current Status - All Prerequisites Met ✅**
+- ✅ Backend: PostgreSQL working, all 33 tests passing, code merged to master
+- ✅ Frontend: Next.js + React 18, local gameplay fully functional, 33 tests passing
+- ✅ Database: Supabase PostgreSQL connected, all tables operational, migrations complete
+- 🚀 Integration: Phase 4 ACTIVE - Sam (Frontend) executing Tasks 2.1-2.6 (6-7 hours)
 
 ---
 
-## Phase 1: Database Setup (CRITICAL - Do This First)
+## Phase 4 Tasks (Currently Executing)
+
+### Task 2.1: API Client Verification (45 min) — IN PROGRESS
+- [ ] Verify endpoint URLs at localhost:3000/api
+- [ ] Test connectivity to real backend
+- [ ] Confirm REST client configuration
+- **Status:** Ready to start
+
+### Task 2.2: GameContext → Real API (1.5 hrs) — QUEUED
+- [ ] Replace mock API calls with real endpoints
+- [ ] Test: createGame, joinGame, makeMove, useCard
+- [ ] Add loading states and error handling
+- **Status:** Blocked on Task 2.1
+
+### Task 2.3: WebSocket Real-Time Sync (1.5 hrs) — QUEUED
+- [ ] Connect to WebSocket at localhost:3000
+- [ ] Listen for opponent moves
+- [ ] Implement reconnection logic
+- **Status:** Blocked on Task 2.2
+
+### Task 2.4-2.6: E2E Testing & Code Review (2-3 hrs) — QUEUED
+- [ ] Run 23-scenario E2E test plan
+- [ ] Test multiplayer with 2 browsers
+- [ ] Code review against checkmate-uno-ai-rules.md
+- [ ] Verify zero any types, zero TypeScript errors
+- **Status:** Blocked on Tasks 2.1-2.3
+
+---
+
+## Phase 1: Database Setup (CRITICAL - Complete ✅)
 
 ### Step 1: Create Supabase Project
 1. Go to [supabase.com](https://supabase.com) and sign in
@@ -46,37 +75,27 @@ PORT=3000
 NODE_ENV=development
 ```
 
-### Step 4: Run Prisma Migrations
+### Step 4: Database Already Set Up ✅
+
+All tables created via migrations:
+- users table
+- games table
+- game_cards table
+- moves table
+
+**Note:** We use raw PostgreSQL queries (pg client) instead of Prisma for Windows compatibility.
+
+### Step 5: Verify Database Connection ✅
 
 ```bash
 cd backend
+npm run start:dev
 
-# Install dependencies (if not already done)
-npm install
-
-# Run migrations to create tables
-npx prisma migrate dev --name init
-
-# This will:
-# 1. Connect to Supabase database
-# 2. Execute SQL from schema.prisma
-# 3. Create all tables (users, games, game_cards, moves)
-# 4. Generate Prisma client
-# 5. Create migrations/ folder with SQL snapshots
+# Expected output:
+# ✓ Database connected
 ```
 
-### Step 5: Verify Database Connection
-
-```bash
-# Test connection
-npx prisma db execute --stdin < /dev/null
-
-# Open Prisma Studio (visual database browser)
-npx prisma studio
-# Opens at http://localhost:5555
-```
-
-✅ **If you see tables in Prisma Studio, database is ready!**
+✅ **Database is connected and ready!**
 
 ---
 

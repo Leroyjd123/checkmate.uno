@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Theme } from '@/types/game';
 import { usersAPI } from '@/lib/api';
 import { useAuth } from './AuthContext';
@@ -17,30 +17,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const { user } = useAuth();
 
-  // Load theme from localStorage and user preferences
-  useEffect(() => {
-    const localTheme = localStorage.getItem('theme_preference') as Theme | null;
-    const themeToUse = localTheme || user?.theme_preference || 'light';
-
-    setThemeState(themeToUse);
-    applyTheme(themeToUse);
-    setIsHydrated(true);
-  }, [user]);
-
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem('theme_preference', newTheme);
-    applyTheme(newTheme);
-
-    // Sync with backend if user is authenticated
-    if (user) {
-      usersAPI.updateTheme(newTheme).catch(err => {
-        console.error('Failed to sync theme preference:', err);
-      });
-    }
-  };
-
-  const applyTheme = (themeValue: Theme) => {
+  const applyTheme = useCallback((themeValue: Theme) => {
     const root = document.documentElement;
 
     switch (themeValue) {
@@ -60,7 +37,31 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.classList.add('light-theme');
         break;
     }
-  };
+  }, []);
+
+  // Load theme from localStorage and user preferences
+  useEffect(() => {
+    const localTheme = localStorage.getItem('theme_preference') as Theme | null;
+    const themeToUse = localTheme || user?.theme_preference || 'light';
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setThemeState(themeToUse);
+    applyTheme(themeToUse);
+    setIsHydrated(true);
+  }, [user, applyTheme]);
+
+  const setTheme = useCallback((newTheme: Theme) => {
+    setThemeState(newTheme);
+    localStorage.setItem('theme_preference', newTheme);
+    applyTheme(newTheme);
+
+    // Sync with backend if user is authenticated
+    if (user) {
+      usersAPI.updateTheme(newTheme).catch(err => {
+        console.error('Failed to sync theme preference:', err);
+      });
+    }
+  }, [user, applyTheme]);
 
   if (!isHydrated) {
     return <>{children}</>;

@@ -51,11 +51,11 @@ export default function HowToPlay() {
               </p>
               <ul className="space-y-3 mt-4 ml-4">
                 <li><strong className="text-green-400">Skip Turn</strong> - Opponent loses their next move</li>
-                <li><strong className="text-red-400">Reverse Move</strong> - Undo opponent's last move</li>
+                <li><strong className="text-red-400">Reverse Move</strong> - Undo opponent&apos;s last move</li>
                 <li><strong className="text-blue-400">Extra Move</strong> - Take an additional move immediately</li>
                 <li><strong className="text-yellow-400">Teleport</strong> - Move any of your pieces to any empty square</li>
                 <li><strong className="text-green-400">Shield</strong> - Protect a piece from capture for one turn</li>
-                <li><strong className="text-red-400">Sacrifice</strong> - Remove a piece to take an opponent's piece</li>
+                <li><strong className="text-red-400">Sacrifice</strong> - Remove a piece to take an opponent&apos;s piece</li>
                 <li><strong className="text-blue-400">Wild Swap</strong> - Swap positions of any two pieces</li>
                 <li><strong className="text-yellow-400">Freeze</strong> - Prevent a piece from moving for one turn</li>
               </ul>
@@ -64,7 +64,7 @@ export default function HowToPlay() {
             <section>
               <h2 className="text-2xl font-bold mb-4">Winning</h2>
               <p>
-                Win by checkmating your opponent (king is in check and has no legal moves) or by causing them to abandon the game. Power cards add tactical depth but don't change the fundamental goal: checkmate.
+                Win by checkmating your opponent (king is in check and has no legal moves) or by causing them to abandon the game. Power cards add tactical depth but don&apos;t change the fundamental goal: checkmate.
               </p>
             </section>
 
@@ -82,7 +82,7 @@ export default function HowToPlay() {
               <ul className="space-y-2 ml-4">
                 <li>• Save power cards for critical moments</li>
                 <li>• Learn when to use defensive vs offensive cards</li>
-                <li>• Adapt to your opponent's card usage</li>
+                <li>• Adapt to your opponent&apos;s card usage</li>
                 <li>• Master classical chess first, power cards second</li>
               </ul>
             </section>

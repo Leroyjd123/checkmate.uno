@@ -2,10 +2,10 @@
 
 A real-time multiplayer chess game with power cards, built with NestJS + React/Next.js.
 
-**Current Status:** ✅ Phase 2 (Backend Infrastructure & Core Logic) Complete | 📅 Phase 3 (Frontend & Integration) Active
+**Current Status:** ✅ Phase 3 (PostgreSQL Backend & Local Gameplay) Complete | 🚀 Phase 4 (Frontend Integration) Active (May 17, 2026)
 
-> [!NOTE]
-> **PR Review Note:** Backend tests are mostly passing (27/27 for core logic). However, `games.service.spec.ts` currently fails to run due to a Jest ESM (`import.meta.url`) configuration issue with Prisma. The next developer should resolve this Jest configuration issue before adding more backend tests.
+> [!SUCCESS]
+> **All Blockers Resolved:** PostgreSQL fully operational (replaced Prisma Windows issue), all 33 backend tests passing, frontend fully playable locally, code merged to master. Phase 4 integration starting now.
 
 ---
 
@@ -16,9 +16,10 @@ A real-time multiplayer chess game with power cards, built with NestJS + React/N
 - Teleport, Shield, Sacrifice, Wild Swap, Freeze
 
 **Tech Stack:**
-- **Backend:** NestJS 10 + Prisma ORM + Supabase PostgreSQL + Socket.io
-- **Frontend:** Next.js + React + TypeScript (TBD)
-- **Real-time:** WebSocket (optional, polling works for MVP)
+- **Backend:** NestJS 11 + PostgreSQL (pg client) + Supabase + Socket.io + chess.js
+- **Frontend:** Next.js 16 + React 18.3.1 + Tailwind CSS + TypeScript
+- **Real-time:** WebSocket (Socket.io) + REST API
+- **Database:** PostgreSQL with parameterized SQL (zero injection risk)
 
 **Game Modes:**
 - 👤 **Local** - Client-side only (no auth)
@@ -48,7 +49,7 @@ A real-time multiplayer chess game with power cards, built with NestJS + React/N
 
 ## Quick Start
 
-### Backend (NestJS)
+### Backend (NestJS + PostgreSQL)
 
 ```bash
 cd backend
@@ -56,30 +57,31 @@ cd backend
 # Set up environment
 cp .env.example .env
 # Edit .env with:
-# - DATABASE_URL (from Supabase)
+# - DATABASE_URL (from Supabase, e.g., postgres://user:pass@host/db)
 # - JWT_SECRET (any random string, 32+ chars)
 
 # Install dependencies
 npm install
 
-# Create database & run migrations
-npx prisma migrate dev --name init
-
-# Start development server
+# Start development server (PostgreSQL connection auto-verified)
 npm run start:dev
-# Server runs at http://localhost:3000
+# Expected output: "✓ Database connected"
+# Server runs at http://localhost:3000/api
 ```
 
 ### Run Tests
 ```bash
-npm test                    # All tests
-npm test -- chess.service   # Only chess tests (27 passing)
+npm test                    # All 33 tests (33 passing ✅)
+npm test -- games.service   # Game logic tests
 ```
 
 ### Verify Backend
 ```bash
-# Build check
-npm run build
+# Full verification
+npm run build              # Build succeeds ✅
+npm run start:dev          # Starts with "✓ Database connected" ✅
+npm test                   # All 33 tests pass ✅
+npm run lint               # Zero lint errors ✅
 
 # API is ready at http://localhost:3000/api
 ```

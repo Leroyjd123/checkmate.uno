@@ -116,7 +116,7 @@ export default function Lobby() {
               Join Room
             </h3>
             <p className="text-slate-600 dark:text-slate-400 text-sm">
-              Enter a room code to join a friend's game
+              Enter a room code to join a friend&apos;s game
             </p>
           </button>
         </div>

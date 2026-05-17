@@ -9,7 +9,7 @@ import { gamesAPI } from '@/lib/api';
 import { getAllPieces, getLegalMoves, makeMove, isCheckmate } from '@/lib/chess';
 import { GameOver } from '@/components/GameOver';
 import { ChessBoard } from '@/components/ChessBoard';
-import { PlayerColor, Game } from '@/types/game';
+import { PlayerColor, Game, PowerCard, ActiveEffect } from '@/types/game';
 
 interface GamePageProps {
   params: Promise<{
@@ -33,9 +33,11 @@ export default function GamePage({ params }: GamePageProps) {
     error,
     executeMoveWithAPI,
     useCardWithAPI,
+    initializeGame,
+    setOpponentCardCount,
   } = useGame();
   const { isAuthenticated, user } = useAuth();
-  const { joinRoom } = useWebSocket();
+  const { joinRoom, subscribe } = useWebSocket();
   const [isLoadingGame, setIsLoadingGame] = useState(!game);
   const [pieces, setPieces] = useState<Record<string, { type: string; color: string }>>({});
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
@@ -72,9 +74,33 @@ export default function GamePage({ params }: GamePageProps) {
         // Only try to fetch from API if it's an online game
         if (!gameId.includes('local')) {
           try {
-            await gamesAPI.getGame(gameId);
-            // Initialize game in context
-            // This would be handled by the parent page logic
+            const response = await gamesAPI.getGame(gameId);
+            const gameData = response.game;
+
+            // Initialize game in context with API response
+            const gameState: Game = {
+              id: gameData.id,
+              mode: gameData.mode,
+              status: gameData.status,
+              room_code: gameData.room_code,
+              board_state: gameData.board_state,
+              current_turn: gameData.current_turn as PlayerColor,
+              active_effects: gameData.active_effects || [],
+              created_at: gameData.created_at || new Date().toISOString(),
+              updated_at: gameData.updated_at || new Date().toISOString(),
+            };
+
+            // Your cards from API response
+            const playerCards: PowerCard[] = response.your_cards.map((card) => ({
+              id: card.id,
+              game_id: card.game_id || gameData.id,
+              player_id: card.player_id || '',
+              card_type: card.card_type,
+              status: card.status,
+            }));
+
+            initializeGame(gameState, playerCards);
+            setOpponentCardCount(response.opponent_card_count || 0);
           } catch {
             setError('Game not found');
             return;
@@ -89,7 +115,7 @@ export default function GamePage({ params }: GamePageProps) {
     };
 
     loadGame();
-  }, [game, gameId, setLoading, setError]);
+  }, [game, gameId, setLoading, setError, initializeGame, setOpponentCardCount]);
 
   // Join WebSocket room for online games
   useEffect(() => {
@@ -97,6 +123,49 @@ export default function GamePage({ params }: GamePageProps) {
       joinRoom(gameId);
     }
   }, [game, gameId, isAuthenticated, joinRoom]);
+
+  // Listen for opponent moves and game events
+  useEffect(() => {
+    if (!game || game.mode !== 'online') return;
+
+    const unsubscribeMoveEvent = subscribe('move_made', (data) => {
+      const moveData = data as { board_state?: string; current_turn?: string; active_effects?: ActiveEffect[] };
+      if (moveData?.board_state) {
+        updateGame({
+          ...game,
+          board_state: moveData.board_state,
+          current_turn: (moveData.current_turn as PlayerColor) || game.current_turn,
+          active_effects: moveData.active_effects || game.active_effects,
+        });
+        setPieces(getAllPieces(moveData.board_state));
+      }
+    });
+
+    const unsubscribeCardEvent = subscribe('card_used', (data) => {
+      const cardData = data as { active_effects?: ActiveEffect[]; board_state?: string };
+      if (cardData?.active_effects) {
+        updateGame({
+          ...game,
+          active_effects: cardData.active_effects,
+          board_state: cardData.board_state || game.board_state,
+        });
+      }
+    });
+
+    const unsubscribeGameOverEvent = subscribe('game_over', (data) => {
+      const gameOverData = data as { winner_id?: string };
+      if (gameOverData?.winner_id) {
+        setGameOver(true);
+        setWinner(gameOverData.winner_id === user?.id ? 'white' : 'black');
+      }
+    });
+
+    return () => {
+      unsubscribeMoveEvent();
+      unsubscribeCardEvent();
+      unsubscribeGameOverEvent();
+    };
+  }, [game, user?.id, subscribe, updateGame]);
 
   const handleSquareClick = async (square: string) => {
     if (!game || gameOver || !isPlayerTurn || isLoading) return;

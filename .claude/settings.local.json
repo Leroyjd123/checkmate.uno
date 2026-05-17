@@ -8,7 +8,13 @@
       "Bash(git commit -m 'merge: phase-2-local-gameplay + phase-3-postgres-refactor into master *)",
       "Bash(git push *)",
       "Bash(git commit *)",
-      "Bash(git branch *)"
+      "Bash(git branch *)",
+      "Bash(Get-Content -Path \"C:\\\\Users\\\\LEROYJ~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-LeroyJoiceDsouza-Desktop-Code-Projects-checkmate-uno\\\\4e1bcaca-3a17-40a0-a08f-9919cb03c36f\\\\tasks\\\\bcljy862p.output\" -Wait -Tail 20)",
+      "Bash(Get-Content -Path \"C:\\\\Users\\\\LEROYJ~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-LeroyJoiceDsouza-Desktop-Code-Projects-checkmate-uno\\\\4e1bcaca-3a17-40a0-a08f-9919cb03c36f\\\\tasks\\\\b2rostdym.output\" -Wait -Tail 20)",
+      "Bash(rm -r node_modules)",
+      "Bash(npm ci *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(docker --version)"
     ]
   }
 }

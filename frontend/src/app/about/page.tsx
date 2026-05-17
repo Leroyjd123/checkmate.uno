@@ -31,11 +31,11 @@ export default function About() {
 
           <div className="space-y-6 text-slate-300 leading-relaxed">
             <p>
-              Checkmate is a modern take on chess that combines the strategic depth of the world's greatest game with the unpredictability of power cards.
+              Checkmate is a modern take on chess that combines the strategic depth of the world&apos;s greatest game with the unpredictability of power cards.
             </p>
 
             <p>
-              We believe chess should be accessible, entertaining, and endlessly replayable. By introducing power cards—special moves that can reverse situations, protect pieces, or change the tempo—we've created a game that rewards both classical strategy and creative thinking.
+              We believe chess should be accessible, entertaining, and endlessly replayable. By introducing power cards—special moves that can reverse situations, protect pieces, or change the tempo—we&apos;ve created a game that rewards both classical strategy and creative thinking.
             </p>
 
             <h2 className="text-2xl font-bold mt-8 mb-4">Features</h2>
@@ -48,7 +48,7 @@ export default function About() {
 
             <h2 className="text-2xl font-bold mt-8 mb-4">Why we built this</h2>
             <p>
-              Chess has been unchanged for centuries. While that's a testament to its perfection, we wondered: what if we added an element of surprise? Power cards introduce new strategic decisions while respecting the core rules of chess.
+              Chess has been unchanged for centuries. While that&apos;s a testament to its perfection, we wondered: what if we added an element of surprise? Power cards introduce new strategic decisions while respecting the core rules of chess.
             </p>
 
             <p>

@@ -36,7 +36,7 @@ export default function Privacy() {
             <section>
               <h2 className="text-2xl font-bold mb-4">Introduction</h2>
               <p>
-                Checkmate ("we", "us", "our") operates the checkmate.game website and service. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our service.
+                Checkmate (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;) operates the checkmate.game website and service. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use our service.
               </p>
             </section>
 
@@ -74,7 +74,7 @@ export default function Privacy() {
             <section>
               <h2 className="text-2xl font-bold mb-4">Changes to This Policy</h2>
               <p>
-                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date at the top of this page.
+                We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the &quot;Last updated&quot; date at the top of this page.
               </p>
             </section>
 

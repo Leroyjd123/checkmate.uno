@@ -83,10 +83,6 @@ export const Interactive: Story = {
   },
   render: () => {
     const [selected, setSelected] = React.useState<string | null>(null);
-    const [moves, setMoves] = React.useState<Array<{ from: string; to: string; piece: string }>>([
-      { from: 'e2', to: 'e4', piece: 'P' },
-      { from: 'e7', to: 'e5', piece: 'p' },
-    ]);
 
     return (
       <ChessBoard
@@ -97,7 +93,10 @@ export const Interactive: Story = {
           console.log(`Clicked: ${sq}`);
         }}
         legalMoves={['a3', 'a4', 'Nf3', 'Nc3']}
-        moves={moves}
+        moves={[
+          { from: 'e2', to: 'e4', piece: 'P' },
+          { from: 'e7', to: 'e5', piece: 'p' },
+        ]}
         capturedPieces={{ white: [], black: [] }}
         currentTurn='white'
       />

@@ -47,12 +47,12 @@ export default function Contact() {
         <div className="max-w-2xl mx-auto relative z-10">
           <h1 className="text-4xl font-bold mb-4">Contact us</h1>
           <p className="text-slate-300 mb-8">
-            Have a question or feedback? We'd love to hear from you.
+            Have a question or feedback? We&apos;d love to hear from you.
           </p>
 
           {submitted ? (
             <div className="p-6 bg-slate-900 rounded-xl border border-slate-800">
-              <p className="text-center text-green-400">Thank you! We'll get back to you soon.</p>
+              <p className="text-center text-green-400">Thank you! We&apos;ll get back to you soon.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
