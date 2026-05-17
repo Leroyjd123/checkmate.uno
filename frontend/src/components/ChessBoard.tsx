@@ -104,7 +104,7 @@ export function ChessBoard({
                     title={`${square}${piece ? ` - ${pieceNames[piece]}` : ''}`}
                   >
                     {piece && (
-                      <span className={piece === piece.toUpperCase() ? 'text-white drop-shadow-lg' : 'text-slate-950 drop-shadow-lg'}>
+                      <span className={piece === piece.toLowerCase() ? 'text-slate-950 drop-shadow-lg' : 'text-white drop-shadow-lg'}>
                         {pieces[piece]}
                       </span>
                     )}

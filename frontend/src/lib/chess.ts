@@ -79,6 +79,20 @@ export function makeMove(fen: string, from: string, to: string): string | null {
   }
 }
 
+export function getComputerMove(fen: string): string | null {
+  const game = getChessFromFEN(fen);
+  const moves = game.moves({ verbose: true });
+
+  // Check for endgame conditions
+  if (!moves || moves.length === 0) {
+    return null; // Game over - no legal moves
+  }
+
+  // Simple AI: pick random move (can be enhanced later)
+  const randomMove = moves[Math.floor(Math.random() * moves.length)];
+  return `${randomMove.from}${randomMove.to}`;
+}
+
 // Utility to get all pieces on the board
 export function getAllPieces(fen: string): Record<string, { type: string; color: PlayerColor }> {
   const game = getChessFromFEN(fen);

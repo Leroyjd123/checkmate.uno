@@ -6,7 +6,7 @@ import { useGame } from '@/contexts/GameContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWebSocket } from '@/contexts/WebSocketContext';
 import { gamesAPI } from '@/lib/api';
-import { getAllPieces, getLegalMoves, makeMove, isCheckmate } from '@/lib/chess';
+import { getAllPieces, getLegalMoves, makeMove, isCheckmate, getComputerMove } from '@/lib/chess';
 import { GameOver } from '@/components/GameOver';
 import { ChessBoard } from '@/components/ChessBoard';
 import { PlayerColor, Game, PowerCard, ActiveEffect, CardType } from '@/types/game';
@@ -228,7 +228,7 @@ export default function GamePage({ params }: GamePageProps) {
           return;
         }
       } else {
-        // For local games, update state directly
+        // For local and computer games, update state directly
         const updatedGame: Game = {
           ...game,
           board_state: newFEN,
@@ -241,12 +241,41 @@ export default function GamePage({ params }: GamePageProps) {
         incrementMoveCount();
         setPieces(getAllPieces(newFEN));
 
-        // Track move for display (move history will be stored in statistics)
-        // Note: Actual game state updates happen through GameContext
-
         if (checkmated) {
           setGameOver(true);
           setWinner(game.current_turn);
+        }
+
+        // Computer move - only if computer's turn and game not over
+        if (game.mode === 'computer' && !checkmated && nextTurn === 'black') {
+          setTimeout(() => {
+            const computerMoveStr = getComputerMove(newFEN);
+            if (computerMoveStr && computerMoveStr.length === 4) {
+              const computerFrom = computerMoveStr.substring(0, 2);
+              const computerTo = computerMoveStr.substring(2, 4);
+              const computerFEN = makeMove(newFEN, computerFrom, computerTo);
+
+              if (computerFEN) {
+                const computerCheckmated = isCheckmate(computerFEN);
+                const computerUpdatedGame: Game = {
+                  ...updatedGame,
+                  board_state: computerFEN,
+                  current_turn: 'white',
+                  status: computerCheckmated ? 'completed' : 'in_progress',
+                  winner_id: computerCheckmated ? 'computer' : undefined,
+                };
+
+                updateGame(computerUpdatedGame);
+                incrementMoveCount();
+                setPieces(getAllPieces(computerFEN));
+
+                if (computerCheckmated) {
+                  setGameOver(true);
+                  setWinner('black');
+                }
+              }
+            }
+          }, 800); // Delay computer move for better UX
         }
       }
 
