@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/contexts/GameContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { WebSocketProvider } from '@/contexts/WebSocketContext';
+import { BoardThemeProvider } from '@/contexts/BoardThemeContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,11 +35,13 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white dark:bg-black">
         <AuthProvider>
           <ThemeProvider>
-            <GameProvider>
-              <WebSocketProvider>
-                {children}
-              </WebSocketProvider>
-            </GameProvider>
+            <BoardThemeProvider>
+              <GameProvider>
+                <WebSocketProvider>
+                  {children}
+                </WebSocketProvider>
+              </GameProvider>
+            </BoardThemeProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

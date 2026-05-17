@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useMemo, useCallback } from 'react';
 import { Game, PowerCard, GameContextType, CardType, GameStatistics, MoveResponse, CardUseResponse } from '@/types/game';
 import { gamesAPI } from '@/lib/api';
+import { Logger } from '@/lib/logger';
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -13,7 +14,7 @@ type GameAction =
   | { type: 'SET_LEGAL_MOVES'; payload: string[] }
   | { type: 'SET_TARGETING_MODE'; payload: CardType | null }
   | { type: 'SET_VALID_TARGETS'; payload: string[] }
-  | { type: 'REMOVE_CARD'; payload: string }
+  | { type: 'MARK_CARD_USED'; payload: string }
   | { type: 'SET_OPPONENT_CARD_COUNT'; payload: number }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_LOADING'; payload: boolean }
@@ -21,6 +22,8 @@ type GameAction =
   | { type: 'INCREMENT_CARDS_USED' }
   | { type: 'SYNC_GAME_STATE'; payload: Game }
   | { type: 'REVERT_GAME_STATE'; payload: Game }
+  | { type: 'ADD_MOVE_TO_HISTORY'; payload: { from: string; to: string } }
+  | { type: 'ADD_CAPTURED_PIECE'; payload: { piece: string; color: 'white' | 'black' } }
   | { type: 'RESET' };
 
 interface GameState {
@@ -58,6 +61,12 @@ const initialState: GameState = {
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'INITIALIZE_GAME':
+      Logger.contextUpdate('GameContext', {
+        action: 'INITIALIZE_GAME',
+        gameId: action.payload.game.id,
+        cardCount: action.payload.cards.length,
+        mode: action.payload.game.mode,
+      });
       return {
         ...state,
         game: action.payload.game,
@@ -70,6 +79,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'UPDATE_GAME':
+      Logger.stateChange('GameContext', 'UPDATE_GAME', state.game?.board_state, action.payload.board_state);
       return {
         ...state,
         game: action.payload,
@@ -106,10 +116,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         validTargets: action.payload,
       };
 
-    case 'REMOVE_CARD':
+    case 'MARK_CARD_USED':
+      const markedCard = state.playerCards.find(c => c.id === action.payload);
+      Logger.stateChange('playerCards', `card marked as used`, markedCard?.card_type, 'used');
       return {
         ...state,
-        playerCards: state.playerCards.filter(card => card.id !== action.payload),
+        playerCards: state.playerCards.map(card =>
+          card.id === action.payload ? { ...card, status: 'used' } : card
+        ),
       };
 
     case 'SET_OPPONENT_CARD_COUNT':
@@ -131,6 +145,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'INCREMENT_MOVE_COUNT':
+      Logger.stateChange('statistics.moveCount', 'incremented', state.statistics.moveCount, state.statistics.moveCount + 1);
       return {
         ...state,
         statistics: {
@@ -140,11 +155,38 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'INCREMENT_CARDS_USED':
+      Logger.stateChange('statistics.cardsUsed', 'incremented', state.statistics.cardsUsed, state.statistics.cardsUsed + 1);
       return {
         ...state,
         statistics: {
           ...state.statistics,
           cardsUsed: state.statistics.cardsUsed + 1,
+        },
+      };
+
+    case 'ADD_MOVE_TO_HISTORY':
+      Logger.stateChange('statistics.moves', `move added`, `${state.statistics.moves.length} moves`, `${state.statistics.moves.length + 1} moves`);
+      return {
+        ...state,
+        statistics: {
+          ...state.statistics,
+          moves: [...state.statistics.moves, action.payload],
+        },
+      };
+
+    case 'ADD_CAPTURED_PIECE':
+      Logger.stateChange('statistics.capturedPieces', `${action.payload.color} captured ${action.payload.piece}`);
+      return {
+        ...state,
+        statistics: {
+          ...state.statistics,
+          capturedPieces: {
+            ...state.statistics.capturedPieces,
+            [action.payload.color]: [
+              ...state.statistics.capturedPieces[action.payload.color],
+              action.payload.piece,
+            ],
+          },
         },
       };
 
@@ -208,8 +250,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_VALID_TARGETS', payload: targets });
   }, []);
 
-  const removeCard = useCallback((cardId: string) => {
-    dispatch({ type: 'REMOVE_CARD', payload: cardId });
+  const addMoveToHistory = useCallback((from: string, to: string) => {
+    dispatch({ type: 'ADD_MOVE_TO_HISTORY', payload: { from, to } });
+  }, []);
+
+  const addCapturedPiece = useCallback((piece: string, color: 'white' | 'black') => {
+    dispatch({ type: 'ADD_CAPTURED_PIECE', payload: { piece, color } });
+  }, []);
+
+  const markCardAsUsed = useCallback((cardId: string) => {
+    dispatch({ type: 'MARK_CARD_USED', payload: cardId });
   }, []);
 
   const setOpponentCardCount = useCallback((count: number) => {
@@ -307,8 +357,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
           },
         });
 
-        // Remove card from hand
-        dispatch({ type: 'REMOVE_CARD', payload: cardId });
+        // Mark card as used
+        dispatch({ type: 'MARK_CARD_USED', payload: cardId });
         dispatch({ type: 'INCREMENT_CARDS_USED' });
         dispatch({ type: 'SET_TARGETING_MODE', payload: null });
         dispatch({ type: 'SET_ERROR', payload: null });
@@ -345,7 +395,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setLegalMoves,
     setTargetingMode,
     setValidTargets,
-    removeCard,
+    addMoveToHistory,
+    addCapturedPiece,
+    markCardAsUsed,
     setOpponentCardCount,
     setError,
     setLoading,
@@ -354,7 +406,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     incrementCardsUsed,
     executeMoveWithAPI,
     useCardWithAPI,
-  }), [state, initializeGame, updateGame, setSelectedPiece, setLegalMoves, setTargetingMode, setValidTargets, removeCard, setOpponentCardCount, setError, setLoading, reset, incrementMoveCount, incrementCardsUsed, executeMoveWithAPI, useCardWithAPI]);
+  }), [state, initializeGame, updateGame, setSelectedPiece, setLegalMoves, setTargetingMode, setValidTargets, addMoveToHistory, addCapturedPiece, markCardAsUsed, setOpponentCardCount, setError, setLoading, reset, incrementMoveCount, incrementCardsUsed, executeMoveWithAPI, useCardWithAPI]);
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }

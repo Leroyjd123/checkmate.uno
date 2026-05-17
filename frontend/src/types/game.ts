@@ -22,6 +22,8 @@ export interface Game {
   current_turn: PlayerColor;
   winner_id?: string;
   active_effects: ActiveEffect[];
+  difficulty?: 'easy' | 'medium' | 'hard';
+  player_color?: PlayerColor; // For computer games: which color the player controls
   created_at: string;
   updated_at: string;
 }
@@ -84,7 +86,9 @@ export interface GameContextType {
   setLegalMoves: (moves: string[]) => void;
   setTargetingMode: (card: CardType | null) => void;
   setValidTargets: (targets: string[]) => void;
-  removeCard: (cardId: string) => void;
+  addMoveToHistory: (from: string, to: string) => void;
+  addCapturedPiece: (piece: string, color: 'white' | 'black') => void;
+  markCardAsUsed: (cardId: string) => void;
   setOpponentCardCount: (count: number) => void;
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
