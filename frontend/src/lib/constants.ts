@@ -72,8 +72,8 @@ export const THEMES: Record<Theme, { bg: string; board_light: string; board_dark
   },
 };
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL || 'ws://localhost:3000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_BASE_URL || 'ws://localhost:3001';
 
 export const CHESS_SQUARE_SIZE = 60; // pixels
 export const BOARD_SIZE = 8;

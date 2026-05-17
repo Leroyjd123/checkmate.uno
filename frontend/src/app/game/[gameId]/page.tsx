@@ -9,7 +9,7 @@ import { gamesAPI } from '@/lib/api';
 import { getAllPieces, getLegalMoves, makeMove, isCheckmate } from '@/lib/chess';
 import { GameOver } from '@/components/GameOver';
 import { ChessBoard } from '@/components/ChessBoard';
-import { PlayerColor, Game, PowerCard, ActiveEffect } from '@/types/game';
+import { PlayerColor, Game, PowerCard, ActiveEffect, CardType } from '@/types/game';
 
 interface GamePageProps {
   params: Promise<{
@@ -46,15 +46,28 @@ export default function GamePage({ params }: GamePageProps) {
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState<'white' | 'black' | null>(null);
 
-  // For local games, track which player is which
-  const playerColor = game?.mode === 'local' ? 'white' : game?.host_id === user?.id ? 'white' : 'black';
-  const isPlayerTurn =
-    game && playerColor && game.current_turn === playerColor;
+  // Determine player color based on game mode and user role
+  // For local games: Always allow both players to move (use turn checking)
+  // For online games: Assign color based on host/guest role
+  const playerColor: PlayerColor = (() => {
+    if (!game) return 'white';
+    if (game.mode === 'local') return 'white'; // Local: color is just for display
+    if (!user) return 'white'; // Fallback if user not loaded
+    // Online: Check if user is host (white) or guest (black)
+    return game.host_id === user.id ? 'white' : 'black';
+  })();
 
-  // Update pieces when game state changes
+  // Turn validation:
+  // - Local games: Always allow the player whose turn it is to move
+  // - Online games: Only allow moves when it's the player's assigned color's turn
+  const isPlayerTurn = !game ? false : (game.mode === 'local' ? true : game.current_turn === playerColor);
+
+  // Sync pieces array whenever board state changes
+  // Setting state here is necessary to keep pieces in sync with FEN string
   useEffect(() => {
     if (game) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
+      // Justification: Board piece positions must be re-derived when FEN changes
       setPieces(getAllPieces(game.board_state));
     }
   }, [game]);
@@ -63,6 +76,7 @@ export default function GamePage({ params }: GamePageProps) {
   useEffect(() => {
     if (game) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
+      // Justification: Mark loading as complete when game context is populated
       setIsLoadingGame(false);
       return;
     }
@@ -156,7 +170,12 @@ export default function GamePage({ params }: GamePageProps) {
       const gameOverData = data as { winner_id?: string };
       if (gameOverData?.winner_id) {
         setGameOver(true);
-        setWinner(gameOverData.winner_id === user?.id ? 'white' : 'black');
+        if (!user) {
+          console.warn('Cannot determine winner: user not authenticated');
+          setWinner('black'); // Default fallback
+          return;
+        }
+        setWinner(gameOverData.winner_id === user.id ? 'white' : 'black');
       }
     });
 
@@ -226,7 +245,7 @@ export default function GamePage({ params }: GamePageProps) {
 
     // Select a piece on the board if it belongs to the current player
     const piece = pieces[square];
-    if (piece && piece.color === playerColor) {
+    if (piece && piece.color === game.current_turn) {
       setSelectedSquare(square);
       const moves = getLegalMoves(game.board_state, square);
       setLegalMoves(moves);
@@ -245,7 +264,6 @@ export default function GamePage({ params }: GamePageProps) {
     // For online games, call the API
     if (game.mode === 'online') {
       try {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
         await useCardWithAPI(game.id, cardId);
         setCardMessage(`${cardType.replace(/_/g, ' ').toUpperCase()} card used!`);
         setTimeout(() => setCardMessage(null), 2000);
@@ -259,22 +277,21 @@ export default function GamePage({ params }: GamePageProps) {
       setCardMessage(`${cardType.replace(/_/g, ' ').toUpperCase()} card used!`);
       setTimeout(() => setCardMessage(null), 2000);
 
-      const validCardType = (cardType === 'shield' || cardType === 'freeze')
-        ? (cardType as 'shield' | 'freeze')
-        : 'shield';
-
-      updateGame({
-        ...game,
-        active_effects: [
-          ...game.active_effects,
-          {
-            type: validCardType,
-            piece_square: '',
-            turns_remaining: 1,
-          },
-        ],
-      });
-    }
+      // Add card effect to active effects (only for effects that have board persistence)
+      const effectTypesWithPersistence = ['shield', 'freeze'];
+      if (effectTypesWithPersistence.includes(cardType)) {
+        updateGame({
+          ...game,
+          active_effects: [
+            ...game.active_effects,
+            {
+              type: cardType as CardType,
+              piece_square: selectedSquare || '',
+              turns_remaining: 3,
+            },
+          ],
+        });
+      }
   };
 
   const handleReplay = () => {
@@ -312,7 +329,6 @@ export default function GamePage({ params }: GamePageProps) {
     );
   }
 
-  // eslint-disable-next-line react-hooks/purity
   const durationSeconds = Math.floor((Date.now() - statistics.startTime) / 1000);
 
   return (

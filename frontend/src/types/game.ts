@@ -52,9 +52,10 @@ export interface CardDefinition {
 }
 
 export interface ActiveEffect {
-  type: 'shield' | 'freeze';
-  piece_square: string;
+  type: CardType;
+  piece_square?: string;
   turns_remaining: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Move {
