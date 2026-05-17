@@ -62,7 +62,8 @@ describe('Game Logic', () => {
       const moveFrom = 'a1';
       const moveTo = 'e1'; // horizontal move on rank 1
 
-      expect(moveFrom[0]).toBe(moveTo[0].toUpperCase() || moveTo[1] === moveFrom[1]);
+      // For a horizontal move, the rank (second character) should be the same
+      expect(moveFrom[1]).toBe(moveTo[1]);
     });
 
     it('should not allow piece to move to occupied square by same color', () => {
@@ -237,8 +238,8 @@ describe('Game Logic', () => {
     });
 
     it('should correctly represent captured pieces in FEN', () => {
-      // FEN after white captures black pawn
-      const fen = 'rnbqkbnr/pp1ppppp/8/8/4pP2/8/PPPP2PP/RNBQKBNR w KQkq - 0 1';
+      // FEN after white captures black pawn (black has 7 pawns instead of 8)
+      const fen = 'rnbqkbnr/p2ppppp/8/8/4PP2/8/PPPP2PP/RNBQKBNR w KQkq - 0 1';
 
       // Verify piece counts changed
       expect(fen.match(/p/g)?.length).toBeLessThan(8); // fewer black pawns

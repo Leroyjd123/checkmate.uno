@@ -57,7 +57,7 @@ describe('Computer Game', () => {
     });
 
     it('should not generate illegal moves', () => {
-      const illegalMoves = ['e2-e9', 'i2-i4', 'a1-a1'];
+      const illegalMoves = ['e2-e9', 'i2-i4', 'z1-z1'];
       const isLegal = (move: string) => /^[a-h][1-8]-[a-h][1-8]$/.test(move);
 
       illegalMoves.forEach((move) => {

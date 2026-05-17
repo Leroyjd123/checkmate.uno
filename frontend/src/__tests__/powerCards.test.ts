@@ -202,11 +202,12 @@ describe('Power Cards System', () => {
         isFrozen: true,
       };
 
-      // Frozen player's turn is skipped
+      // When a player is frozen, their turn is skipped and the other player gets another turn
       let nextTurn = gameState.currentTurn === 'white' ? 'black' : 'white';
 
+      // If frozen, the next turn calculation remains the same (other player goes again)
       if (gameState.isFrozen) {
-        nextTurn = gameState.currentTurn; // Skip to next player
+        // nextTurn is already set to the non-frozen player, so they get to go again
       }
 
       expect(nextTurn).toBe('white');

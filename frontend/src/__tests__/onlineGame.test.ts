@@ -53,13 +53,20 @@ describe('Online Game - Room Management', () => {
       expect(displayText).toContain(roomCode);
     });
 
-    it('should allow copying room code', () => {
+    it('should allow copying room code', async () => {
       const roomCode = 'ABC123DEF456';
 
-      // Simulate copy to clipboard
+      // Mock clipboard API
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: jest.fn(() => Promise.resolve()),
+        },
+      });
+
       const copied = navigator.clipboard.writeText(roomCode);
 
       expect(copied).toBeDefined();
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(roomCode);
     });
 
     it('should set host player as white', async () => {
