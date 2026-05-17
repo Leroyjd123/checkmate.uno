@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -24,12 +25,13 @@ export class AuthService {
       throw new BadRequestException('Email already exists');
     }
 
-    // In a real app, password would be hashed using bcrypt
-    // For MVP, we'll store it directly (NEVER do this in production)
+    // Hash password with bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = await this.prisma.user.create({
       data: {
         email,
-        // TODO: Hash password with bcrypt
+        password: hashedPassword,
       },
     });
 
@@ -58,8 +60,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // TODO: Verify password with bcrypt
-    // For MVP, skip password verification
+    // Verify password with bcrypt
+    const passwordValid = await bcrypt.compare(password, user.password);
+
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
 
     const token = this.jwtService.sign(
       { sub: user.id, email: user.email },
