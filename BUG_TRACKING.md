@@ -204,7 +204,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 
 ## BUG #3: Card Type Casting Error (HIGH)
 
-**Status:** 🔴 NEW  
+**Status:** 🟢 READY_FOR_QA  
 **Severity:** HIGH - Breaks card effect system  
 **Priority:** P1 - Fix before card effects testing  
 **Component:** Frontend - Card System / Game Logic  
@@ -305,7 +305,7 @@ const cardTypeToEffectType = (cardType: string): 'shield' | 'freeze' | null => {
 
 ## BUG #4: Player Color Assignment in Online Games (HIGH)
 
-**Status:** 🔴 NEW  
+**Status:** 🟢 READY_FOR_QA  
 **Severity:** HIGH - Breaks online multiplayer  
 **Priority:** P1 - Fix before online testing  
 **Component:** Frontend - Game Context, Turn Logic  
@@ -394,7 +394,7 @@ Actually, looking at the code, error toast CAN be dismissed. Mark as **NON-ISSUE
 
 ## BUG #6: Null Safety in Winner Assignment (MEDIUM)
 
-**Status:** 🔴 NEW  
+**Status:** 🟢 READY_FOR_QA  
 **Severity:** MEDIUM - Edge case in online games  
 **Priority:** P2 - Fix in next iteration  
 **Component:** Frontend - Game Context  
@@ -445,7 +445,7 @@ setWinner(gameOverData.winner_id === user.id ? 'white' : 'black');
 
 ## BUG #7: ESLint Comments Without Justification (LOW)
 
-**Status:** 🔴 NEW  
+**Status:** 🟢 READY_FOR_QA  
 **Severity:** LOW - Code quality issue  
 **Priority:** P3 - Backlog  
 **Component:** Frontend - Code Quality  
@@ -475,11 +475,11 @@ N/A - code quality issue
 |---|---|---|---|---|---|---|---|
 | 1 | Player 1 Can't Move | ✅ VERIFIED | CRITICAL | P0 | YES | Sam | ✅ PASS |
 | 2 | Auth Returns 500 | 🔴 NEW | CRITICAL | P0 | YES | Alex | Waiting |
-| 3 | Card Type Casting | 🔴 NEW | HIGH | P1 | NO | Sam | Waiting |
-| 4 | Online Color Assignment | 🔴 NEW | HIGH | P1 | YES* | Sam | Waiting |
+| 3 | Card Type Casting | 🟢 READY_FOR_QA | HIGH | P1 | NO | Sam | Testing |
+| 4 | Online Color Assignment | 🟢 READY_FOR_QA | HIGH | P1 | YES* | Sam | Testing |
 | 5 | Error Toast | ✅ SKIP | N/A | N/A | NO | N/A | Code OK |
-| 6 | Null Safety Winner | 🔴 NEW | MEDIUM | P2 | NO | Sam | Waiting |
-| 7 | ESLint Comments | 🔴 NEW | LOW | P3 | NO | Sam | Waiting |
+| 6 | Null Safety Winner | 🟢 READY_FOR_QA | MEDIUM | P2 | NO | Sam | Testing |
+| 7 | ESLint Comments | 🟢 READY_FOR_QA | LOW | P3 | NO | Sam | Testing |
 
 *Blocks online testing, not local testing
 
