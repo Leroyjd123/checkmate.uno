@@ -30,7 +30,9 @@
       "Bash(pkill -f \"npm run start\")",
       "Bash(curl -s -X POST http://localhost:3001/api/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"alice@example.com\",\"password\":\"Test123!\"}')",
       "Bash(curl -s -X POST http://localhost:3001/api/games -H 'Content-Type: application/json' -d '{\"mode\":\"local\"}')",
-      "Bash(cat > *)"
+      "Bash(cat > *)",
+      "Bash(awk 'NR==412, NR==485 {print NR\": \"$0}' page.tsx)",
+      "Bash(awk 'NR>=334 && NR<=501' page.tsx)"
     ],
     "additionalDirectories": [
       "\\tmp"
